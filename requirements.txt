@@ -1,0 +1,10 @@
+# PlanAnchor has ZERO third-party runtime dependencies.
+# It is implemented entirely with the Python standard library (3.8+).
+#
+# This file is intentionally empty and exists only so that tooling which
+# expects requirements.txt does not fail. Install with:
+#
+#     pip install -e .
+#
+# Optional, for packaging/release only:
+#     pip install build twine

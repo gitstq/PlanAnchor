@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (py${{ matrix.python-version }} · ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Smoke test the CLI
+        run: |
+          python -m plananchor init PLAN.md
+          python -m plananchor parse PLAN.md
+          python -m plananchor check PLAN.md --no-refs
+          python -m plananchor snapshot PLAN.md
+          python -m plananchor verify PLAN.md
+          python -m plananchor resume PLAN.md --lang en
+
+      - name: End-to-end demo
+        run: python scripts/demo.py
+
+  self-check:
+    name: plananchor checks its own plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Audit the repository plan
+        # `check` (not `status`) — a fresh checkout has no working-tree diff,
+        # so drift rules would report every closed task as "untouched".
+        run: python -m plananchor check PLAN.md --fail-on warning

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plananchor"
+version = "1.0.0"
+description = "Zero-dependency plan anchoring, drift auditing and crash recovery for AI coding agents"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "gitstq" }]
+keywords = [
+    "ai-agent",
+    "plan",
+    "markdown",
+    "drift-detection",
+    "context-recovery",
+    "cli",
+    "ci",
+    "zero-dependency",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+# PlanAnchor has NO third-party runtime dependencies — standard library only.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["build>=1.0", "twine>=4.0"]
+
+[project.urls]
+Homepage = "https://github.com/gitstq/PlanAnchor"
+Repository = "https://github.com/gitstq/PlanAnchor"
+Issues = "https://github.com/gitstq/PlanAnchor/issues"
+
+[project.scripts]
+plananchor = "plananchor.cli:main"
+
+[tool.setuptools]
+packages = ["plananchor"]
+
+[tool.setuptools.package-data]
+plananchor = ["py.typed"]
+
+[tool.pytest.ini_options]
+# pytest is optional; the canonical runner is `python -m unittest discover`.
+testpaths = ["tests"]
