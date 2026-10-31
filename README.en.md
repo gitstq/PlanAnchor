@@ -94,6 +94,8 @@ Anyone who has run a long task with an AI coding agent (Claude Code, Cursor, Cod
 | `DF006` | 🔵 info | **No progress** — tasks open, repository untouched |
 | `DF000` | 🔵 info | Git unavailable (graceful degradation — never a crash) |
 
+> 🪟 **Change window**: drift compares the *uncommitted* diff against `HEAD`. When the work tree is clean — a fresh clone, or every edit already committed — the window is empty and per-task `DF001` verdicts would flag already-landed history as errors. PlanAnchor then switches to **settled mode** and collapses them into a single informational summary. To audit a slice of history, widen the window explicitly with `plananchor drift PLAN.md --base HEAD~5`.
+
 ### 🐌 6 stall classes (ST series)
 
 `ST001` stuck on one task · `ST002` status churn · `ST003` blocker cascades downstream · `ST004` progress frozen · `ST005` first task abandoned · `ST006` no "in progress" anchor
