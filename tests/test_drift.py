@@ -59,6 +59,31 @@ class DriftTest(unittest.TestCase):
         report = detect_drift(parse_text(open(self.plan_path).read(), path=self.plan_path), repo=self.tmp)
         self.assertIn("DF001", self._codes(report))
 
+    def test_df001_is_an_error_inside_an_active_change_window(self):
+        # b.py is modified, so the change window is open and the verdict is decidable.
+        write(os.path.join(self.tmp, "b.py"), "def beta():\n    return 99\n")
+        self._plan("- [x] 1 change alpha `@a.py`\n")
+        report = detect_drift(parse_text(open(self.plan_path).read(), path=self.plan_path), repo=self.tmp)
+        severities = {i.rule: i.severity.value for i in report.items}
+        self.assertEqual(severities.get("DF001"), "error")
+        self.assertFalse(report.settled)
+
+    def test_settled_tree_collapses_df001_into_one_info(self):
+        self._plan("- [x] 1 change alpha `@a.py`\n- [x] 2 change beta `@b.py`\n")
+        report = detect_drift(parse_text(open(self.plan_path).read(), path=self.plan_path), repo=self.tmp)
+        self.assertTrue(report.settled)
+        codes = self._codes(report)
+        self.assertEqual(codes.count("DF001"), 1)
+        item = [i for i in report.items if i.rule == "DF001"][0]
+        self.assertEqual(item.severity.value, "info")
+        self.assertIn("could not be verified", item.message)
+
+    def test_settled_flag_is_serialised(self):
+        self._plan("- [x] 1 change alpha `@a.py`\n")
+        report = detect_drift(parse_text(open(self.plan_path).read(), path=self.plan_path), repo=self.tmp)
+        self.assertIn("settled", report.to_dict())
+        self.assertTrue(report.to_dict()["settled"])
+
     def test_df002_silent_change(self):
         write(os.path.join(self.tmp, "a.py"), "def alpha():\n    return 99\n")
         self._plan("- [ ] 1 do something else `@b.py`\n")

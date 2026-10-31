@@ -13,6 +13,18 @@ Drift classes
 ``DF004`` scope-creep             — a *done* task touched files outside its refs
 ``DF005`` orphan-reference        — a task references a file Git does not track
 ``DF006`` no-progress             — nothing changed at all while tasks remain open
+
+Settled work trees
+------------------
+
+Drift is verified against a *change window* — by default the uncommitted diff
+against ``HEAD``.  A freshly cloned repository (or one where every edit is
+already committed) has an **empty window**, so per-task "claimed done but
+untouched" verdicts would be pure noise: the work simply happened in an earlier
+commit.  In that *settled* mode PlanAnchor collapses the verdicts into a single
+informational ``DF001`` summary instead of one error per task.  Widen the
+window with ``--base <rev>`` (or ``detect_drift(base=...)``) to audit a
+specific range of history.
 """
 
 from __future__ import annotations
@@ -60,6 +72,7 @@ class DriftReport:
     head: str = ""
     branch: str = ""
     git_available: bool = False
+    settled: bool = False
 
     @property
     def clean(self) -> bool:
@@ -79,6 +92,7 @@ class DriftReport:
             "repo_root": self.repo_root,
             "head": self.head,
             "branch": self.branch,
+            "settled": self.settled,
             "changed_files": sorted(self.changed.keys()),
             "claimed_files": sorted(self.claimed),
             "counts": self.counts(),
@@ -178,6 +192,15 @@ def detect_drift(
                 report.claimed.add(target)
 
     # -- DF001 / DF003 / DF005 --------------------------------------------- #
+    #
+    # An empty change window (nothing uncommitted) is a *settled* work tree:
+    # per-task "you said done but nothing changed" verdicts would all fire and
+    # all be meaningless, because the work already landed in an earlier commit.
+    # In that mode we emit one aggregated informational verdict instead.
+    settled = not changed
+    report.settled = settled
+    unverifiable: List[Task] = []
+
     for t in tasks:
         if not t.refs:
             continue
@@ -185,6 +208,9 @@ def detect_drift(
         touched = [target for _, target in resolved if target]
 
         if t.status is TaskStatus.DONE and not touched:
+            if settled:
+                unverifiable.append(t)
+                continue
             report.items.append(
                 DriftItem(
                     rule="DF001",
@@ -230,6 +256,21 @@ def detect_drift(
                             hint="the symbol may already exist — verify before trusting the checkbox",
                         )
                     )
+
+    if settled and unverifiable:
+        preview = ", ".join(repr(t.title) for t in unverifiable[:3])
+        if len(unverifiable) > 3:
+            preview += ", …"
+        report.items.append(
+            DriftItem(
+                rule="DF001",
+                message="%d done task(s) could not be verified — no uncommitted changes in the work tree (%s)"
+                % (len(unverifiable), preview),
+                severity=Severity.INFO,
+                hint="the change window is empty, so drift is not decidable; the work may already be "
+                "committed — re-run with --base <rev> to audit a specific range of history",
+            )
+        )
 
     # -- DF002 silent change ------------------------------------------------ #
     for path in sorted(normalised):
