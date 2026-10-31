@@ -1,7 +1,7 @@
 ---
 project: PlanAnchor
 owner: gitstq
-version: 1.0.0
+version: 1.0.1
 ---
 
 # PlanAnchor 孵化计划
